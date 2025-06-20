@@ -7,7 +7,7 @@ import re
 
 app = Flask(__name__)
 
-genai.configure(api_key="YOUR_API_KEY")  # ← substitua aqui
+genai.configure(api_key="AIzaSyDl4WzDlVTwASIHlPoRNc0j__wL3VdNPcY")  # ← substitua aqui
 
 model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest")
 
