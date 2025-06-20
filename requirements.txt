@@ -1,0 +1,4 @@
+Flask
+gtts
+pydub
+google-generativeai
