@@ -1,18 +1,16 @@
 from flask import Flask, request, jsonify, send_file
-from gtts import gTTS
-from pydub import AudioSegment
-import os
 import google.generativeai as genai
+import pyttsx3
+import os
 import re
+from pydub import AudioSegment
 
 app = Flask(__name__)
-
-genai.configure(api_key="AIzaSyDl4WzDlVTwASIHlPoRNc0j__wL3VdNPcY")  # ← substitua aqui
-
+genai.configure(api_key="AIzaSyDl4WzDlVTwASIHlPoRNc0j__wL3VdNPcY")
 model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest")
 
-AUDIO_MP3 = "resposta.mp3"
-AUDIO_WAV = "resposta.wav"
+AUDIO_FILE = "resposta.wav"
+TEMP_FILE = "temp_output.wav"
 
 @app.route("/ask", methods=["POST"])
 def ask():
@@ -23,18 +21,23 @@ def ask():
 
         print(f"Prompt recebido: {prompt}")
         response = model.generate_content(prompt)
-        text = response.text.strip()
-        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
-
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", response.text.strip())
         print(f"Resposta gerada: {text}")
 
-        # Gerar .mp3 com gTTS
-        tts = gTTS(text=text, lang='pt')
-        tts.save(AUDIO_MP3)
+        # Fala o texto usando pyttsx3 e salva em WAV temporário
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 150)
+        engine.save_to_file(text, TEMP_FILE)
+        engine.runAndWait()
 
-        # Converter .mp3 para .wav
-        sound = AudioSegment.from_mp3(AUDIO_MP3)
-        sound.export(AUDIO_WAV, format="wav")
+        # Converte o WAV para 8-bit, mono, 8000 Hz com pydub
+        sound = AudioSegment.from_wav(TEMP_FILE)
+        sound = sound.set_frame_rate(22050).set_channels(1).set_sample_width(2)  # 16-bit
+        sound.export(AUDIO_FILE, format="wav")
+
+        # Remove arquivo temporário
+        if os.path.exists(TEMP_FILE):
+            os.remove(TEMP_FILE)
 
         return jsonify(response=text)
 
@@ -42,13 +45,11 @@ def ask():
         print("Erro no servidor:", str(e))
         return jsonify(error=str(e)), 500
 
-
 @app.route("/audio", methods=["GET"])
 def audio():
-    if os.path.exists(AUDIO_WAV):
-        return send_file(AUDIO_WAV, mimetype="audio/wav")
+    if os.path.exists(AUDIO_FILE):
+        return send_file(AUDIO_FILE, mimetype="audio/wav")
     return "Arquivo de áudio não encontrado", 404
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
