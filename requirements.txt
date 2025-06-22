@@ -1,4 +1,5 @@
 Flask
+pyttsx3
 gtts
 pydub
 google-generativeai
