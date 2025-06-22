@@ -3,9 +3,9 @@ FROM python:3.10-slim
 WORKDIR /app
 COPY . /app
 
-# Instalar dependências do sistema: ffmpeg para pydub, espeak para pyttsx3
+# Instalar espeak e dependências mínimas
 RUN apt-get update && \
-    apt-get install -y ffmpeg espeak && \
+    apt-get install -y espeak && \
     pip install --no-cache-dir -r requirements.txt
 
 EXPOSE 5000
